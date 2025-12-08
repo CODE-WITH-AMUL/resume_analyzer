@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,13 +6,64 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authAPI, resumeAPI } from '../services/api';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = useState<any>(null);
+  const [profileData, setProfileData] = useState<any>(null);
+  const [stats, setStats] = useState({ total: 0, avgScore: 0, thisMonth: 0 });
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const userStr = await AsyncStorage.getItem('user_data');
+      const profileStr = await AsyncStorage.getItem('profile_data');
+      
+      if (userStr) {
+        setUserData(JSON.parse(userStr));
+      }
+      if (profileStr) {
+        setProfileData(JSON.parse(profileStr));
+      }
+
+      // Fetch CV history for stats
+      try {
+        const history = await resumeAPI.getHistory();
+        if (history && Array.isArray(history)) {
+          const total = history.length;
+          const avgScore = total > 0 
+            ? Math.round(history.reduce((sum: number, cv: any) => sum + (cv.overall_score || 0), 0) / total)
+            : 0;
+          
+          // Calculate this month
+          const now = new Date();
+          const thisMonth = history.filter((cv: any) => {
+            const cvDate = new Date(cv.created_at);
+            return cvDate.getMonth() === now.getMonth() && cvDate.getFullYear() === now.getFullYear();
+          }).length;
+
+          setStats({ total, avgScore, thisMonth });
+        }
+      } catch (error) {
+        console.log('Could not load stats:', error);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -20,7 +71,14 @@ export default function ProfileScreen() {
       {
         text: "Logout",
         style: "destructive",
-        onPress: () => router.replace("/"),
+        onPress: async () => {
+          try {
+            await authAPI.logout();
+          } catch (error) {
+            console.log('Logout error:', error);
+          }
+          router.replace("/");
+        },
       },
     ]);
   };
@@ -63,6 +121,22 @@ export default function ProfileScreen() {
     },
   ];
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0A1D4D" />
+          <Text style={styles.loadingText}>Loading profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const displayName = profileData?.first_name && profileData?.last_name
+    ? `${profileData.first_name} ${profileData.last_name}`
+    : userData?.username || 'User';
+  const displayEmail = userData?.email || profileData?.email || 'No email';
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -73,21 +147,21 @@ export default function ProfileScreen() {
           <View style={styles.profileImageContainer}>
             <Ionicons name="person" size={48} color="#FFFFFF" />
           </View>
-          <Text style={styles.userName}>John Doe</Text>
-          <Text style={styles.userEmail}>john.doe@example.com</Text>
+          <Text style={styles.userName}>{displayName}</Text>
+          <Text style={styles.userEmail}>{displayEmail}</Text>
         </View>
 
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>12</Text>
+            <Text style={styles.statValue}>{stats.total}</Text>
             <Text style={styles.statLabel}>Analyses</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>85</Text>
+            <Text style={styles.statValue}>{stats.avgScore}</Text>
             <Text style={styles.statLabel}>Avg Score</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>5</Text>
+            <Text style={styles.statValue}>{stats.thisMonth}</Text>
             <Text style={styles.statLabel}>This Month</Text>
           </View>
         </View>
@@ -126,6 +200,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F9FAFB",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#6B7280',
   },
   scrollView: {
     flex: 1,

@@ -6,15 +6,82 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import * as DocumentPicker from 'expo-document-picker';
+import { resumeAPI } from '../services/api';
+import { useRouter } from 'expo-router';
 
 export default function AnalyzeScreen() {
-  const [uploadedFile, setUploadedFile] = useState<string | null>(null);
+  const router = useRouter();
+  const [uploadedFile, setUploadedFile] = useState<any>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  const handleUpload = () => {
-    Alert.alert("Coming Soon", "File upload functionality will be added soon!");
+  const handleUpload = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'],
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const file = result.assets[0];
+      if (!file) {
+        Alert.alert('Error', 'No file selected');
+        return;
+      }
+
+      // Check file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size && file.size > maxSize) {
+        Alert.alert('Error', 'File size must be less than 10MB');
+        return;
+      }
+
+      setUploadedFile(file);
+      setUploading(true);
+      setUploadProgress(0);
+
+      // Prepare file object for upload
+      const fileObj = {
+        uri: file.uri,
+        type: file.mimeType || 'application/pdf',
+        name: file.name,
+      };
+
+      // Upload and analyze
+      const response = await resumeAPI.uploadAndAnalyze(fileObj, (progress: number) => {
+        setUploadProgress(progress);
+      });
+
+      setUploading(false);
+      Alert.alert(
+        'Success!',
+        `Resume analyzed successfully!\nOverall Score: ${response.overall_score}/100`,
+        [
+          {
+            text: 'View Details',
+            onPress: () => {
+              // Navigate to history or results screen
+              router.push('/(tabs)/history');
+            }
+          },
+          { text: 'OK' }
+        ]
+      );
+      
+      setUploadedFile(null);
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      setUploading(false);
+      Alert.alert('Upload Failed', error.response?.data?.error || error.message || 'Failed to upload resume');
+    }
   };
 
   return (
@@ -30,17 +97,50 @@ export default function AnalyzeScreen() {
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.uploadBox} onPress={handleUpload}>
+        <TouchableOpacity 
+          style={styles.uploadBox} 
+          onPress={handleUpload}
+          disabled={uploading}
+        >
           <View style={styles.uploadIconContainer}>
-            <Ionicons name="cloud-upload-outline" size={64} color="#0A1D4D" />
+            {uploading ? (
+              <ActivityIndicator size="large" color="#0A1D4D" />
+            ) : (
+              <Ionicons name="cloud-upload-outline" size={64} color="#0A1D4D" />
+            )}
           </View>
-          <Text style={styles.uploadTitle}>Tap to Upload Resume</Text>
-          <Text style={styles.uploadSubtitle}>
-            Supported formats: PDF, DOC, DOCX
-          </Text>
-          <View style={styles.uploadButton}>
-            <Text style={styles.uploadButtonText}>Browse Files</Text>
-          </View>
+          
+          {uploading ? (
+            <>
+              <Text style={styles.uploadTitle}>Uploading...</Text>
+              <Text style={styles.uploadSubtitle}>
+                {uploadProgress}% complete
+              </Text>
+              <View style={styles.progressBar}>
+                <View style={[styles.progressFill, { width: `${uploadProgress}%` }]} />
+              </View>
+            </>
+          ) : uploadedFile ? (
+            <>
+              <Text style={styles.uploadTitle}>{uploadedFile.name}</Text>
+              <Text style={styles.uploadSubtitle}>
+                Tap to upload a different file
+              </Text>
+              <View style={styles.uploadButton}>
+                <Text style={styles.uploadButtonText}>Change File</Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.uploadTitle}>Tap to Upload Resume</Text>
+              <Text style={styles.uploadSubtitle}>
+                Supported formats: PDF, DOC, DOCX, TXT
+              </Text>
+              <View style={styles.uploadButton}>
+                <Text style={styles.uploadButtonText}>Browse Files</Text>
+              </View>
+            </>
+          )}
         </TouchableOpacity>
 
         <View style={styles.tipsContainer}>
@@ -56,6 +156,10 @@ export default function AnalyzeScreen() {
           <View style={styles.tipItem}>
             <Ionicons name="checkmark-circle" size={20} color="#10B981" />
             <Text style={styles.tipText}>Keep file size under 10MB</Text>
+          </View>
+          <View style={styles.tipItem}>
+            <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+            <Text style={styles.tipText}>Ensure text is selectable (not scanned image)</Text>
           </View>
         </View>
       </ScrollView>
@@ -102,11 +206,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#0A1D4D",
     marginBottom: 8,
+    textAlign: 'center',
   },
   uploadSubtitle: {
     fontSize: 14,
     color: "#6B7280",
     marginBottom: 24,
+    textAlign: 'center',
   },
   uploadButton: {
     backgroundColor: "#0A1D4D",
@@ -118,6 +224,19 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
+  },
+  progressBar: {
+    width: '100%',
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    marginTop: 16,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#0A1D4D',
+    borderRadius: 4,
   },
   tipsContainer: {
     backgroundColor: "#FFFFFF",
@@ -139,5 +258,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#6B7280",
     marginLeft: 12,
+    flex: 1,
   },
 });

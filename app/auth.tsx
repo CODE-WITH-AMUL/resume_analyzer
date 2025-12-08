@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,10 +9,12 @@ import {
   Platform,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { authAPI } from './services/api';
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -20,30 +22,64 @@ export default function AuthScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  useEffect(() => {
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setUsername("");
+    setShowPassword(false);
+    setLoading(false);
+  }, [activeTab]);
+
+  const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please fill all fields");
+      Alert.alert("Error", "Please enter email and password");
       return;
     }
-    
-    router.replace("/(tabs)");
+    setLoading(true);
+    try {
+      const response = await authAPI.login({ email, password });
+      console.log("Login successful:", response);
+      router.replace("/(tabs)/");
+    } catch (error: any) {
+      console.log("Login error details:", error);
+      const errorMsg = error.response?.data?.error || error.message || "An error occurred. Check if Django server is running.";
+      Alert.alert("Login Failed", errorMsg);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleRegister = () => {
-    if (!email || !password || !confirmPassword || !fullName) {
+  const handleRegister = async () => {
+    if (!email || !password || !confirmPassword || !username) {
       Alert.alert("Error", "Please fill all fields");
       return;
     }
-    
     if (password !== confirmPassword) {
       Alert.alert("Error", "Passwords do not match");
       return;
     }
-    
-    router.replace("/(tabs)");
+    const emailRegex = /\S+@\S+\.\S+/;
+    if (!emailRegex.test(email)) {
+      Alert.alert("Error", "Please enter a valid email address");
+      return;
+    }
+    setLoading(true);
+    try {
+      await authAPI.register({ username, email, password });
+      Alert.alert("Success", "Registration successful! Please log in.");
+      setActiveTab("login");
+    } catch (error: any) {
+      console.log("Registration error details:", error);
+      const errorMsg = error.response?.data?.error || error.message || "An error occurred. Check if Django server is running.";
+      Alert.alert("Registration Failed", errorMsg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -71,6 +107,7 @@ export default function AuthScreen() {
             <TouchableOpacity
               style={[styles.tab, activeTab === "login" && styles.activeTab]}
               onPress={() => setActiveTab("login")}
+              disabled={loading}
             >
               <Text
                 style={[
@@ -87,6 +124,7 @@ export default function AuthScreen() {
                 activeTab === "register" && styles.activeTab,
               ]}
               onPress={() => setActiveTab("register")}
+              disabled={loading}
             >
               <Text
                 style={[
@@ -100,6 +138,27 @@ export default function AuthScreen() {
           </View>
 
           <View style={styles.formContainer}>
+            {activeTab === "login" && (
+                 <View style={styles.inputContainer}>
+                 <Ionicons
+                   name="mail-outline"
+                   size={20}
+                   color="#666"
+                   style={styles.inputIcon}
+                 />
+                 <TextInput
+                   style={styles.input}
+                   placeholder="Email"
+                   placeholderTextColor="#999"
+                   value={email}
+                   onChangeText={setEmail}
+                   autoCapitalize="none"
+                   keyboardType="email-address"
+                   editable={!loading}
+                 />
+               </View>
+            )}
+
             {activeTab === "register" && (
               <View style={styles.inputContainer}>
                 <Ionicons
@@ -110,33 +169,36 @@ export default function AuthScreen() {
                 />
                 <TextInput
                   style={styles.input}
-                  placeholder="Full Name"
+                  placeholder="Username"
                   placeholderTextColor="#999"
-                  value={fullName}
-                  onChangeText={setFullName}
-                  autoCapitalize="words"
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  editable={!loading}
                 />
               </View>
             )}
 
-            <View style={styles.inputContainer}>
-              <Ionicons
-                name="mail-outline"
-                size={20}
-                color="#666"
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Email"
-                placeholderTextColor="#999"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-
+            {activeTab === "register" && (
+              <View style={styles.inputContainer}>
+                <Ionicons
+                  name="mail-outline"
+                  size={20}
+                  color="#666"
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email"
+                  placeholderTextColor="#999"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  editable={!loading}
+                />
+              </View>
+            )}
             <View style={styles.inputContainer}>
               <Ionicons
                 name="lock-closed-outline"
@@ -151,10 +213,13 @@ export default function AuthScreen() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
+                editable={!loading}
               />
+
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeIcon}
+                disabled={loading}
               >
                 <Ionicons
                   name={showPassword ? "eye-outline" : "eye-off-outline"}
@@ -179,12 +244,13 @@ export default function AuthScreen() {
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showPassword}
+                  editable={!loading}
                 />
               </View>
             )}
 
             {activeTab === "login" && (
-              <TouchableOpacity style={styles.forgotPassword}>
+              <TouchableOpacity style={styles.forgotPassword} disabled={loading}>
                 <Text style={styles.forgotPasswordText}>
                   Forgot Password?
                 </Text>
@@ -192,12 +258,17 @@ export default function AuthScreen() {
             )}
 
             <TouchableOpacity
-              style={styles.button}
+              style={[styles.button, loading && styles.buttonDisabled]}
               onPress={activeTab === "login" ? handleLogin : handleRegister}
+              disabled={loading}
             >
-              <Text style={styles.buttonText}>
-                {activeTab === "login" ? "Sign In" : "Sign Up"}
-              </Text>
+              {loading ? (
+                <ActivityIndicator color="#0A1D4D" />
+              ) : (
+                <Text style={styles.buttonText}>
+                  {activeTab === "login" ? "Sign In" : "Sign Up"}
+                </Text>
+              )}
             </TouchableOpacity>
 
             <View style={styles.divider}>
@@ -206,12 +277,12 @@ export default function AuthScreen() {
               <View style={styles.dividerLine} />
             </View>
 
-            <TouchableOpacity style={styles.socialButton}>
+            <TouchableOpacity style={[styles.socialButton, loading && styles.buttonDisabled]} disabled={loading}>
               <Ionicons name="logo-google" size={20} color="#DB4437" />
               <Text style={styles.socialButtonText}>Continue with Google</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.socialButton}>
+            <TouchableOpacity style={[styles.socialButton, loading && styles.buttonDisabled]} disabled={loading}>
               <Ionicons name="logo-apple" size={20} color="#000" />
               <Text style={styles.socialButtonText}>Continue with Apple</Text>
             </TouchableOpacity>
@@ -323,6 +394,9 @@ const styles = StyleSheet.create({
     color: "#0A1D4D",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  buttonDisabled: {
+    backgroundColor: "#E5E7EB",
   },
   divider: {
     flexDirection: "row",

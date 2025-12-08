@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
+import os
+from django.core.files import File
 
 
 class Profile(models.Model):
@@ -51,6 +53,32 @@ class CV(models.Model):
         return f"{self.profile.user.username}'s CV"
 
 
+
+
 class Resuma_Report(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='resumareports')
-    downlaode_resume = models.file
+    downloaded_resume = models.FileField(upload_to='downloaded_resumes/', null=True, blank=True)
+    report = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Report for {self.user.username}"
+    
+    def save(self, *args, **kwargs):
+        """
+        Automatically attach the latest CV for the user when generating the report.
+        """
+        # Only attach if no resume is already attached
+        if not self.downloaded_resume:
+            # Get the latest CV for the user
+            latest_cv = self.user.profile.cvs.last()  # Assuming user has a profile and CVs
+            if latest_cv and latest_cv.uploaded_cv:
+                # Copy the CV file into the downloaded_resume field
+                self.downloaded_resume.save(
+                    os.path.basename(latest_cv.uploaded_cv.name),
+                    File(latest_cv.uploaded_cv),
+                    save=False
+                )
+                self.report = "Resume ready for download."
+        
+        super().save(*args, **kwargs)
