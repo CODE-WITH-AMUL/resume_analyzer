@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 
 const RegisterPage = ({ setUser }) => {
@@ -17,10 +17,7 @@ const RegisterPage = ({ setUser }) => {
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
@@ -40,16 +37,20 @@ const RegisterPage = ({ setUser }) => {
     setLoading(true);
 
     try {
+      // Send registration data
       const { confirmPassword, ...userData } = formData;
-      const data = await authAPI.register(userData);
+      await authAPI.register(userData);
+
+      // Auto-login after registration
       const loginData = await authAPI.login({
-        username: formData.username,
+        email: formData.email,
         password: formData.password,
       });
+
       setUser(loginData.user);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed. Please try again.');
+      setError(err.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -70,9 +71,7 @@ const RegisterPage = ({ setUser }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-2">
-                First Name
-              </label>
+              <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
               <input
                 type="text"
                 id="first_name"
@@ -85,9 +84,7 @@ const RegisterPage = ({ setUser }) => {
             </div>
 
             <div>
-              <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-2">
-                Last Name
-              </label>
+              <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
               <input
                 type="text"
                 id="last_name"
@@ -101,9 +98,7 @@ const RegisterPage = ({ setUser }) => {
           </div>
 
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-              Username
-            </label>
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">Username</label>
             <input
               type="text"
               id="username"
@@ -117,9 +112,7 @@ const RegisterPage = ({ setUser }) => {
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              Email
-            </label>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email</label>
             <input
               type="email"
               id="email"
@@ -133,9 +126,7 @@ const RegisterPage = ({ setUser }) => {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">Password</label>
             <input
               type="password"
               id="password"
@@ -149,9 +140,7 @@ const RegisterPage = ({ setUser }) => {
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-              Confirm Password
-            </label>
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
             <input
               type="password"
               id="confirmPassword"
@@ -179,30 +168,16 @@ const RegisterPage = ({ setUser }) => {
             disabled={loading}
             className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Creating account...
-              </span>
-            ) : (
-              'Sign Up'
-            )}
+            {loading ? 'Creating account...' : 'Sign Up'}
           </button>
 
           <div className="text-center text-sm text-gray-600">
             Already have an account?{' '}
-            <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
-              Sign in
-            </Link>
+            <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">Sign in</Link>
           </div>
 
           <div className="text-center text-sm">
-            <Link to="/" className="text-gray-600 hover:text-gray-700">
-              ← Back to Home
-            </Link>
+            <Link to="/" className="text-gray-600 hover:text-gray-700">← Back to Home</Link>
           </div>
         </form>
       </motion.div>

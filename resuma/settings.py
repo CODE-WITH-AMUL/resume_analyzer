@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     
     'rest_framework',
     'corsheaders',
-    
+    'account',
     'core',
 ]
 
@@ -50,6 +50,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -121,7 +122,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS Configuration
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = ['http://localhost:*', 'http://127.0.0.1:*']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:*', 'http://127.0.0.1:*', 'http://192.168.*:*', 'http://10.0.*:*']
+CSRF_COOKIE_SAMESITE = None
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SAMESITE = None
+SESSION_COOKIE_SECURE = False
 
 # REST Framework Configuration
 REST_FRAMEWORK = {
