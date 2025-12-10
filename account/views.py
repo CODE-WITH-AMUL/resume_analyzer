@@ -1,14 +1,21 @@
-from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.contrib.auth.models import User
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
-from .serializers import UserRegisterSerializer, LoginSerializer
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .serializers import LoginSerializer, UserRegisterSerializer
 
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
 
     def post(self, request):
         serializer = UserRegisterSerializer(data=request.data)
@@ -28,6 +35,10 @@ class RegisterView(APIView):
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
 
@@ -38,12 +49,12 @@ class LoginView(APIView):
             try:
                 user_obj = User.objects.get(email=email)
             except User.DoesNotExist:
-                return Response({"error": "Invalid email or password"}, status=400)
+                return Response({"error": "Invalid email or password"}, status=status.HTTP_400_BAD_REQUEST)
 
             user = authenticate(username=user_obj.username, password=password)
 
             if user is None:
-                return Response({"error": "Invalid email or password"}, status=400)
+                return Response({"error": "Invalid email or password"}, status=status.HTTP_400_BAD_REQUEST)
 
             login(request, user)
 
@@ -54,7 +65,7 @@ class LoginView(APIView):
                     "username": user.username,
                     "email": user.email
                 }
-            })
+            }, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -64,15 +75,17 @@ class LogoutView(APIView):
 
     def post(self, request):
         logout(request)
-        return Response({"message": "Logged out successfully"})
+        return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
 
 
 class CurrentUserView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request):
         if not request.user.is_authenticated:
-            return Response({"user": None})
+            return Response({"user": None}, status=status.HTTP_200_OK)
 
         user = request.user
         return Response({
             "user": {"id": user.id, "username": user.username, "email": user.email}
-        })
+        }, status=status.HTTP_200_OK)

@@ -6,7 +6,7 @@ from .models import Profile, CV, Resuma_Report
 class ProfileAdmin(admin.ModelAdmin):
     list_display = ['user', 'email', 'first_name', 'last_name']
     search_fields = ['user__username', 'email', 'first_name', 'last_name']
-    list_filter = ['dob']
+
 
 
 @admin.register(CV)

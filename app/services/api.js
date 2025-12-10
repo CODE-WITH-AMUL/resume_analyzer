@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { Platform } from 'react-native';
+
 
 // -------------------------------
 // 🌐 Configure API URLs
@@ -21,7 +21,7 @@ console.log('🌐 Core API URL:', API_CORE_URL);
 // 🔥 Axios Instance
 // -------------------------------
 const api = axios.create({
-  baseURL: API_CORE_URL,
+  baseURL: API_CORE_URL, // Default base for core APIs
   headers: { 'Content-Type': 'application/json' },
   timeout: 15000,
 });
@@ -89,7 +89,6 @@ export const resumeAPI = {
           }
         },
       });
-
       return response.data;
     } catch (error) {
       return handleError(error, 'Resume Upload');

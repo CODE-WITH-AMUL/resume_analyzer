@@ -1,6 +1,7 @@
-from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Profile, CV, Resuma_Report
+from rest_framework import serializers
+
+from .models import CV, Profile, Resuma_Report
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -14,7 +15,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Profile
-        fields = ['id', 'user', 'profile_picture', 'first_name', 'last_name', 'email', 'dob']
+        fields = ['id', 'user', 'profile_picture', 'first_name', 'last_name', 'email', 'dob', 'created_at', 'updated_at']
 
 
 class CVSerializer(serializers.ModelSerializer):
@@ -27,13 +28,13 @@ class CVSerializer(serializers.ModelSerializer):
             'contact_information', 'address', 'education', 'experience',
             'skills', 'projects', 'languages', 'hobbies', 'certifications',
             'awards', 'overall_score', 'grammar_score', 'keyword_match_score',
-            'suggestion', 'created_at'
+            'suggestion', 'created_at', 'updated_at'
         ]
         read_only_fields = [
             'extracted_text', 'contact_information', 'address', 'education',
             'experience', 'skills', 'projects', 'languages', 'hobbies',
             'certifications', 'awards', 'overall_score', 'grammar_score',
-            'keyword_match_score', 'suggestion', 'created_at'
+            'keyword_match_score', 'suggestion', 'created_at', 'updated_at'
         ]
 
 
@@ -65,3 +66,4 @@ class ResumaReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Resuma_Report
         fields = ['id', 'user', 'downloaded_resume', 'report', 'created_at']
+        read_only_fields = ['created_at']

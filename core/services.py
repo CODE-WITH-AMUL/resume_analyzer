@@ -3,16 +3,27 @@ import re
 import json
 import PyPDF2
 import docx2txt
-import ollama
-from django.conf import settings
+from google import genai
+import environ
 from dotenv import load_dotenv
 
 load_dotenv()
 
-MODEL_NAME = os.getenv("MODEL_NAME", "qwen3:4b")
+# ==========================
+#  Environment & Gemini API
+# ==========================
+env = environ.Env()
+environ.Env.read_env()
+
+MODEL_NAME = os.getenv("GOOGLE_MODEL_NAME", "gemini-2.5-flash")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 PROMPT_RESUME_ANALYSIS = os.getenv("PROMPT_RESUME_ANALYSIS", "").replace("\\n", "\n")
 
+client = genai.Client(api_key=GOOGLE_API_KEY)
 
+# ==========================
+#  Resume File Reading
+# ==========================
 def read_resume_from_file(file_path):
     text = ""
     if file_path.endswith(".txt"):
@@ -36,7 +47,9 @@ def read_resume_from_file(file_path):
         raise ValueError("Unsupported file type. Only TXT, PDF, DOCX allowed.")
     return text
 
-
+# ==========================
+#  Resume Cleaning
+# ==========================
 def clean_resume_text(text, max_words=2000):
     text = re.sub(r'(\r\n|\r|\n)+', ' ', text)
     text = re.sub(r'\s+', ' ', text)
@@ -50,7 +63,9 @@ def clean_resume_text(text, max_words=2000):
         text = " ".join(words[:max_words])
     return text
 
-
+# ==========================
+#  Job Category Detection
+# ==========================
 def detect_job_category(resume_text):
     categories = {
         "Data Science": ["python", "machine learning", "pandas", "numpy", "scikit-learn", "nlp", "regression", "clustering", "tensorflow", "pytorch"],
@@ -74,7 +89,9 @@ def detect_job_category(resume_text):
     
     return detected if detected else ["General"]
 
-
+# ==========================
+#  Structured Data Extraction
+# ==========================
 def extract_structured_data(ai_json):
     return {
         "contact_information": json.dumps(ai_json.get("name", "") + " | " + ai_json.get("email", "") + " | " + ai_json.get("phone_number", "")),
@@ -85,21 +102,22 @@ def extract_structured_data(ai_json):
         "certifications": json.dumps(ai_json.get("certifications", [])),
     }
 
-
+# ==========================
+#  Score Calculation
+# ==========================
 def calculate_scores(ai_json):
     overall_score = ai_json.get("candidate_score", 0)
-    
     grammar_score = max(0, min(100, overall_score - 10 + (len(ai_json.get("skills", [])) * 2)))
-    
     keyword_match_score = min(100, len(ai_json.get("skills", [])) * 5)
-    
     return {
         "overall_score": overall_score,
         "grammar_score": grammar_score,
         "keyword_match_score": keyword_match_score
     }
 
-
+# ==========================
+#  Analyze Resume with Google Gemini
+# ==========================
 def analyze_resume_with_ai(file_path):
     resume_text = read_resume_from_file(file_path)
     clean_text = clean_resume_text(resume_text)
@@ -109,15 +127,11 @@ def analyze_resume_with_ai(file_path):
     prompt_with_resume = PROMPT_RESUME_ANALYSIS.replace("{{RESUME_TEXT}}", clean_text)
     
     try:
-        response = ollama.chat(
+        response = client.models.generate_content(
             model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": prompt_with_resume},
-                {"role": "user", "content": clean_text}
-            ]
+            contents=prompt_with_resume
         )
-        
-        ai_output = response["message"]["content"]
+        ai_output = response.text
         
         try:
             first_brace = ai_output.find("{")
