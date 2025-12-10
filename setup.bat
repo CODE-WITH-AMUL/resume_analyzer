@@ -18,9 +18,7 @@ python manage.py createsuperuser
 echo.
 
 echo Installing Node.js dependencies...
-cd frontend
 call npm install
-cd ..
 echo.
 
 echo ========================================

@@ -1,48 +1,102 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# ------------------------------------
+# Global Ignore for Django + Expo + Node + Python
+# ------------------------------------
 
-# dependencies
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.log
+db.sqlite3
+
+# Virtual Environments
+venv/
+env/
+.venv/
+ENV/
+
+# Django Static / Media
+/staticfiles/
+/media/
+*.mo
+*.pot
+
+# Local settings
+.env
+.env.*
+!.env.example
+
+# ------------------------------------
+# ===== Node / React Native / Expo =====
+# ------------------------------------
+
+# Node modules
 node_modules/
 
-
-.local.gitignore
-
-
-
-# Expo
+# Expo & Metro
 .expo/
+.expo-shared/
 dist/
 web-build/
 expo-env.d.ts
+.metro-health-check*
 
-# Native
-.kotlin/
-*.orig.*
+# Yarn / NPM debug logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Expo build folders
+/build/
+app-example/
+
+# Generated native folders (React Native)
+ios/
+android/
+
+# Keystore / Certificates
 *.jks
+*.keystore
 *.p8
 *.p12
 *.key
 *.mobileprovision
 
-# Metro
-.metro-health-check*
-
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
+# ------------------------------------
+# ===== OS Files =====
+# ------------------------------------
 
 # macOS
 .DS_Store
-*.pem
 
-# local env files
-.env*.local
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
 
-# typescript
+# Linux
+*.swp
+*.swo
+
+# ------------------------------------
+# ===== IDE / Editor =====
+# ------------------------------------
+
+# VS Code
+.vscode/
+.history/
+
+# JetBrains
+.idea/
+
+# Other editors
+*.orig.*
+
+# TypeScript build info
 *.tsbuildinfo
 
-app-example
-
-# generated native folders
-/ios
-/android
+# ------------------------------------
+# End
+# ------------------------------------

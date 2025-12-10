@@ -276,28 +276,46 @@ def upload_and_analyze_resume(request):
 # -----------------------------
 @api_view(['GET'])
 @authentication_classes([CsrfExemptSessionAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def get_cv_history(request):
     """
-    Get CV history for authenticated user
+    Get CV history for authenticated user or guest
     """
     try:
-        profile = getattr(request.user, 'profile', None)
-        if not profile:
-            # Create profile if it doesn't exist
-            profile, created = Profile.objects.get_or_create(
-                user=request.user,
+        if request.user.is_authenticated:
+            profile = getattr(request.user, 'profile', None)
+            if not profile:
+                # Create profile if it doesn't exist
+                profile, created = Profile.objects.get_or_create(
+                    user=request.user,
+                    defaults={
+                        'email': request.user.email or '',
+                        'first_name': request.user.first_name or '',
+                        'last_name': request.user.last_name or ''
+                    }
+                )
+        else:
+            # For guest, get or create guest user's profile
+            guest_user, _ = User.objects.get_or_create(
+                username='guest_user',
                 defaults={
-                    'email': request.user.email or '',
-                    'first_name': request.user.first_name or '',
-                    'last_name': request.user.last_name or '',
-                    'dob': None
+                    'email': 'guest@example.com',
+                    'first_name': 'Guest',
+                    'last_name': 'User'
                 }
             )
-        
+            profile, _ = Profile.objects.get_or_create(
+                user=guest_user,
+                defaults={
+                    'email': 'guest@example.com',
+                    'first_name': 'Guest',
+                    'last_name': 'User'
+                }
+            )
+
         # Get CVs ordered by creation date (newest first)
         cvs = CV.objects.filter(profile=profile).order_by('-created_at')
-        
+
         # Get basic info for each CV (not full analysis to reduce payload)
         cv_list = []
         for cv in cvs[:50]:  # Limit to 50 most recent
@@ -308,7 +326,7 @@ def get_cv_history(request):
                 'created_at': cv.created_at,
                 'file_size': cv.uploaded_cv.size if cv.uploaded_cv else 0,
             })
-        
+
         return Response(
             {
                 'count': len(cv_list),
@@ -316,7 +334,7 @@ def get_cv_history(request):
             },
             status=status.HTTP_200_OK
         )
-    
+
     except Exception as e:
         return Response(
             {'error': f'Error fetching CV history: {str(e)}'},

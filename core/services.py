@@ -3,7 +3,7 @@ import re
 import json
 import PyPDF2
 import docx2txt
-from google import genai
+import google.generativeai as genai
 import environ
 from dotenv import load_dotenv
 
@@ -15,11 +15,13 @@ load_dotenv()
 env = environ.Env()
 environ.Env.read_env()
 
-MODEL_NAME = os.getenv("GOOGLE_MODEL_NAME", "gemini-2.5-flash")
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+MODEL_NAME = ("gemini-1.5-flash")
+GOOGLE_API_KEY = "AIzaSyCp-FvHevyxPjipZg_lnV3ViDWGuWwtA54"
 PROMPT_RESUME_ANALYSIS = os.getenv("PROMPT_RESUME_ANALYSIS", "").replace("\\n", "\n")
 
-client = genai.Client(api_key=GOOGLE_API_KEY)
+# Configure Google Generative AI
+genai.configure(api_key=GOOGLE_API_KEY)
+client = genai.GenerativeModel(model_name=MODEL_NAME)
 
 # ==========================
 #  Resume File Reading
@@ -116,23 +118,47 @@ def calculate_scores(ai_json):
     }
 
 # ==========================
+#  Basic Skill Extraction Fallback
+# ==========================
+def extract_basic_skills(text):
+    """Basic skill extraction as fallback"""
+    common_skills = {
+        'python': 'Python',
+        'javascript': 'JavaScript',
+        'react': 'React',
+        'java': 'Java',
+        'sql': 'SQL',
+        'html': 'HTML',
+        'css': 'CSS',
+        'docker': 'Docker',
+        'aws': 'AWS',
+        'git': 'Git',
+        'linux': 'Linux'
+    }
+
+    found = []
+    lower_text = text.lower()
+    for kw, display in common_skills.items():
+        if kw in lower_text:
+            found.append(display)
+
+    return found
+
+# ==========================
 #  Analyze Resume with Google Gemini
 # ==========================
 def analyze_resume_with_ai(file_path):
     resume_text = read_resume_from_file(file_path)
     clean_text = clean_resume_text(resume_text)
-    
+
     job_categories = detect_job_category(clean_text)
-    
+
     prompt_with_resume = PROMPT_RESUME_ANALYSIS.replace("{{RESUME_TEXT}}", clean_text)
-    
+
     try:
-        response = client.models.generate_content(
-            model=MODEL_NAME,
-            contents=prompt_with_resume
-        )
+        response = client.generate_content(prompt_with_resume)
         ai_output = response.text
-        
+
         try:
             first_brace = ai_output.find("{")
             last_brace = ai_output.rfind("}")
@@ -152,29 +178,31 @@ def analyze_resume_with_ai(file_path):
                 "projects": []
             }
             ai_output = "Failed to parse AI response properly."
-        
+
     except Exception as e:
+        print(f"AI Error: {str(e)}")
+        ai_output = f"Error during AI analysis: {str(e)}"
+        # Fall back to basic analysis without AI
         ai_json = {
-            "candidate_score": 0,
-            "reasons_for_rejection": [f"AI Analysis Error: {str(e)}"],
-            "name": "",
+            "candidate_score": 45,  # Fallback score
+            "reasons_for_rejection": [f"AI Analysis temporarily unavailable. Error: {str(e)}"],
+            "name": "Unknown",
             "email": "",
             "phone_number": "",
             "education": [],
             "work_experience": [],
-            "skills": [],
+            "skills": extract_basic_skills(clean_text),
             "certifications": [],
             "projects": []
         }
-        ai_output = f"Error during AI analysis: {str(e)}"
-    
+
     structured_data = extract_structured_data(ai_json)
     scores = calculate_scores(ai_json)
-    
+
     suggestion = ai_output
     if "reasons_for_rejection" in ai_json and ai_json["reasons_for_rejection"]:
         suggestion += "\n\nAreas for Improvement:\n" + "\n".join([f"- {reason}" for reason in ai_json["reasons_for_rejection"]])
-    
+
     return {
         "extracted_text": clean_text,
         "job_categories": job_categories,

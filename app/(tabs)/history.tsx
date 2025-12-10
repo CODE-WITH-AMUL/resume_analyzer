@@ -24,8 +24,8 @@ export default function HistoryScreen() {
   const loadHistory = async () => {
     try {
       const history = await resumeAPI.getHistory();
-      if (history && Array.isArray(history)) {
-        setAnalyses(history);
+      if (history && Array.isArray(history.results)) {
+        setAnalyses(history.results);
       }
     } catch (error: any) {
       console.error('Error loading history:', error);

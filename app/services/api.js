@@ -1,18 +1,22 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-
+import { Platform } from 'react-native';
+import CONFIG from '../../config.js';
 
 // -------------------------------
 // 🌐 Configure API URLs
 // -------------------------------
-const LOCAL_IP = '192.168.1.72'; // Replace with your PC's LAN IP
-const PORT = 8000;
+let BASE_URL;
+if (Platform.OS === 'android') {
+  BASE_URL = CONFIG.REACT_BASE_URL_ANDROID;
+} else if (Platform.OS === 'ios') {
+  BASE_URL = CONFIG.REACT_BASE_URL_IOS;
+} else {
+  BASE_URL = CONFIG.REACT_BASE_URL;
+}
 
-const getAccountUrl = () => `http://${LOCAL_IP}:${PORT}/api`;
-const getCoreUrl = () => `http://${LOCAL_IP}:${PORT}`;
-
-const API_ACCOUNT_URL = getAccountUrl();
-const API_CORE_URL = getCoreUrl();
+const API_ACCOUNT_URL = `${BASE_URL}/api`;
+const API_CORE_URL = BASE_URL;
 
 console.log('🌐 Account API URL:', API_ACCOUNT_URL);
 console.log('🌐 Core API URL:', API_CORE_URL);

@@ -1,10 +1,9 @@
 @echo off
 echo ========================================
-echo Starting React Frontend Server
+echo Starting Expo React Native App
 echo ========================================
 echo.
-echo Server will run on http://localhost:3000
+echo App will start and show QR code for connection
 echo.
 
-cd frontend
-call npm run dev
+npx expo start

@@ -129,6 +129,7 @@ CSRF_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
 CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to access CSRF token
 CSRF_USE_SESSIONS = False
+CSRF_USE_COOKIES = False  # Disable CSRF for development
 
 # Session Configuration
 SESSION_COOKIE_SAMESITE = 'Lax'
