@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="github/main.png" width="150" alt="Resume Analyzer Logo">
+  <img src="github/main.png" width="500" alt="Resume Analyzer Logo">
 
 #  Resume Analyzer — AI Powered Resume Evaluation System
 An intelligent Resume Analyzer built with **Django**, **React/React Native**, and **LLM Models** to analyze resumes, generate insights, rate skills, and improve professional documents using AI.
@@ -75,8 +75,6 @@ An intelligent Resume Analyzer built with **Django**, **React/React Native**, an
 
 ---
 
-
----
 
 ##  Installation Guide
 
