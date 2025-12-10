@@ -1,50 +1,99 @@
-# Welcome to your Expo app 👋
+<div align="center">
+  <img src="github/main.png" width="150" alt="Resume Analyzer Logo">
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+#  Resume Analyzer — AI Powered Resume Evaluation System
+An intelligent Resume Analyzer built with **Django**, **React/React Native**, and **LLM Models** to analyze resumes, generate insights, rate skills, and improve professional documents using AI.
 
-## Get started
+---
 
-1. Install dependencies
+###  Live Screens
 
-   ```bash
-   npm install
-   ```
+#### GetStared Page
+<img src="github/getpage.png" width="30%" alt="Screenshot 1">
 
-2. Start the app
+#### Login Page
+<img src="github/login.png" width="30%" alt="Screenshot 4">
 
-   ```bash
-   npx expo start
-   ```
+#### Register Page
+<img src="github/register.png" width="30%" alt="Screenshot 5">
 
-In the output, you'll find options to open the app in a
+#### Home Page
+<img src="github/hame.png" width="30%" alt="Screenshot 6">
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+#### Upload Page
+<img src="github/resume.png" width="30%" alt="Screenshot 7">
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
-## Get a fresh project
+#### Analyze Page
+<img src="github/sucess.png" width="30%" alt="Screenshot 2">
 
-When you're ready, run:
+#### Profile Page
+<img src="github/profile.png" width="30%" alt="Screenshot 3"> 
 
+
+---
+
+</div>
+
+##  Features
+
+###  AI-Based Resume Analysis
+- Extract education, experience, skills from PDF/DOCX  
+- Identify weaknesses in resume  
+- Provide rating & keywords for ATS  
+- Highlight missing skills for job roles  
+
+###  User Dashboard
+- Manage resumes  
+- See history of analyzed CVs  
+- Detailed scoring and suggestions  
+
+###  Profile System
+- Save name, image & personal data  
+- Track all resume uploads  
+- Secure login with JWT/DRF authentication  
+
+###  Clean UI with Modern Design
+- Home → Upload Resume → Result → Profile  
+- Responsive & smooth animations  
+- Mobile app also included (React Native / Expo)
+
+---
+
+##  Tech Stack
+
+### **Backend (Django + DRF)**
+- Django
+- Django REST Framework
+
+
+### **Frontend (React / React Native)**
+- React
+- React Native & Expo
+- Tailwind / Bootstrap
+- Axios for API calls
+
+---
+
+
+---
+
+##  Installation Guide
+
+###  Clone Repo**
 ```bash
-npm run reset-project
+git clone https://github.com/CODE-WITH-AMUL/resume_analyzer.git
+cd resume_analyzer
+
+```
+### Install Dependencies**
+```bash
+pip install -r requirements.txt
+npm i
+```
+###  Run the Server**
+```bash
+python manage.py runserver
+npm start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
